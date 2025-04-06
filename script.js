@@ -1,130 +1,127 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-let playerImg = new Image();
+const playerImg = new Image();
 playerImg.src = "vlada.jpg";
 
-let enemyImg = new Image();
+const enemyImg = new Image();
 enemyImg.src = "pavlo.jpg";
 
+const player = {
+  x: canvas.width / 2 - 20,
+  y: canvas.height - 60,
+  width: 40,
+  height: 40,
+  speed: 4
+};
+
+const bullets = [];
+const enemies = [];
+
+let keys = { left: false, right: false };
+let shooting = false;
 let gameOver = false;
 
-let player = { x: 135, y: 410, w: 50, h: 50 };
-let bullets = [];
-let enemies = [];
-
-let moveLeft = false;
-let moveRight = false;
-let shooting = false;
-
 function spawnEnemy() {
-  enemies.push({
-    x: Math.random() * (canvas.width - 50),
-    y: -60,
-    w: 50,
-    h: 50,
-    speed: 1.8,
+  const x = Math.random() * (canvas.width - 40);
+  enemies.push({ x, y: -40, width: 40, height: 40, speed: 2 });
+}
+
+setInterval(spawnEnemy, 2000);
+
+function shoot() {
+  bullets.push({
+    x: player.x + player.width / 2 - 5,
+    y: player.y,
+    width: 10,
+    height: 20,
+    speed: 7
   });
 }
-
-function drawPlayer() {
-  ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
-}
-
-function drawEnemies() {
-  enemies.forEach(e => {
-    ctx.drawImage(enemyImg, e.x, e.y, e.w, e.h);
-  });
-}
-
-function drawBullets() {
-  bullets.forEach(b => {
-    ctx.fillStyle = "yellow";
-    ctx.fillRect(b.x, b.y, b.w, b.h);
-  });
-}
-
-function shootBullet() {
-  bullets.push({ x: player.x + player.w / 2 - 2, y: player.y, w: 5, h: 10 });
-}
-
-let shootInterval = setInterval(() => {
-  if (shooting && !gameOver) shootBullet();
-}, 300);
 
 function update() {
-  if (gameOver) return;
+  if (keys.left) player.x -= player.speed;
+  if (keys.right) player.x += player.speed;
+  if (shooting && frame % 10 === 0) shoot();
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawPlayer();
-  drawEnemies();
-  drawBullets();
-
-  if (moveLeft) player.x -= 4;
-  if (moveRight) player.x += 4;
-
-  // межі руху гравця
-  if (player.x < 0) player.x = 0;
-  if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
-
-  enemies.forEach((e, j) => {
-    e.y += e.speed;
-
-    // зіткнення з гравцем або краєм поля = поразка
-    if (
-      (e.x < player.x + player.w &&
-       e.x + e.w > player.x &&
-       e.y < player.y + player.h &&
-       e.y + e.h > player.y) ||
-      e.y + e.h >= canvas.height
-    ) {
-      gameOver = true;
-      alert("Гру завершено!");
-      location.reload();
-    }
-  });
+  // Не виходити за межі поля
+  player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
 
   bullets.forEach((b, i) => {
-    b.y -= 7;
-
-    enemies.forEach((e, j) => {
-      if (
-        b.x < e.x + e.w &&
-        b.x + b.w > e.x &&
-        b.y < e.y + e.h &&
-        b.y + b.h > e.y
-      ) {
-        enemies.splice(j, 1);
-        bullets.splice(i, 1);
-      }
-    });
-
+    b.y -= b.speed;
     if (b.y < 0) bullets.splice(i, 1);
   });
 
-  requestAnimationFrame(update);
+  enemies.forEach((e, i) => {
+    e.y += e.speed;
+
+    // Якщо ворог торкнувся гравця або низу
+    if (
+      e.y + e.height >= canvas.height ||
+      (e.x < player.x + player.width &&
+        e.x + e.width > player.x &&
+        e.y < player.y + player.height &&
+        e.y + e.height > player.y)
+    ) {
+      gameOver = true;
+    }
+
+    bullets.forEach((b, j) => {
+      if (
+        b.x < e.x + e.width &&
+        b.x + b.width > e.x &&
+        b.y < e.y + e.height &&
+        b.y + b.height > e.y
+      ) {
+        enemies.splice(i, 1);
+        bullets.splice(j, 1);
+      }
+    });
+  });
 }
 
-// натискання
-document.getElementById("left").addEventListener("mousedown", () => moveLeft = true);
-document.getElementById("right").addEventListener("mousedown", () => moveRight = true);
-document.getElementById("shoot").addEventListener("mousedown", () => shooting = true);
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
 
-// відпускання
-document.getElementById("left").addEventListener("mouseup", () => moveLeft = false);
-document.getElementById("right").addEventListener("mouseup", () => moveRight = false);
-document.getElementById("shoot").addEventListener("mouseup", () => shooting = false);
+  bullets.forEach((b) => {
+    ctx.fillStyle = "red";
+    ctx.fillRect(b.x, b.y, b.width, b.height);
+  });
 
-// для мобільних (touch)
-document.getElementById("left").addEventListener("touchstart", e => { moveLeft = true; e.preventDefault(); });
-document.getElementById("right").addEventListener("touchstart", e => { moveRight = true; e.preventDefault(); });
-document.getElementById("shoot").addEventListener("touchstart", e => { shooting = true; e.preventDefault(); });
+  enemies.forEach((e) => {
+    ctx.drawImage(enemyImg, e.x, e.y, e.width, e.height);
+  });
 
-document.getElementById("left").addEventListener("touchend", () => moveLeft = false);
-document.getElementById("right").addEventListener("touchend", () => moveRight = false);
+  if (gameOver) {
+    ctx.fillStyle = "white";
+    ctx.font = "24px sans-serif";
+    ctx.fillText("Гру завершено!", canvas.width / 2 - 70, canvas.height / 2);
+  }
+}
+
+let frame = 0;
+function gameLoop() {
+  if (!gameOver) {
+    update();
+    draw();
+    frame++;
+    requestAnimationFrame(gameLoop);
+  }
+}
+
+gameLoop();
+
+// Рух
+document.getElementById("left").addEventListener("touchstart", () => keys.left = true);
+document.getElementById("left").addEventListener("touchend", () => keys.left = false);
+
+document.getElementById("right").addEventListener("touchstart", () => keys.right = true);
+document.getElementById("right").addEventListener("touchend", () => keys.right = false);
+
+// Стріляти кнопкою
+document.getElementById("shoot").addEventListener("touchstart", () => shooting = true);
 document.getElementById("shoot").addEventListener("touchend", () => shooting = false);
 
-// спавн ворогів
-setInterval(spawnEnemy, 2000);
-
-update();
+// Стріляти при кліку по canvas
+canvas.addEventListener("click", () => shoot());
