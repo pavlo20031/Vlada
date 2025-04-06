@@ -5,28 +5,36 @@ body {
   color: #fff;
   text-align: center;
   user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
 }
 
 canvas {
-  display: block;
-  margin: 30px auto 20px;
   background-color: #111;
   border: 4px solid #0ff;
   border-radius: 12px;
   box-shadow: 0 0 25px #0ff;
+  width: 90vw;
+  max-width: 360px;
+  height: auto;
+  aspect-ratio: 2/3;
+  margin-top: 20px;
 }
 
 .controls {
   display: flex;
   justify-content: center;
   gap: 15px;
-  margin-bottom: 40px;
+  margin: 20px 0;
+  flex-wrap: wrap;
 }
 
 .btn {
   width: 70px;
   height: 70px;
-  font-size: 28px;
+  font-size: 30px;
   color: #0ff;
   background: #222;
   border: 2px solid #0ff;
@@ -35,7 +43,46 @@ canvas {
   box-shadow: 0 0 10px #0ff88c;
   transition: all 0.2s ease-in-out;
 }
+
 .btn:active {
   background: #0ff;
   color: #000;
+}
+
+/* Адаптація для дуже малих екранів */
+@media (max-width: 360px) {
+  .btn {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+  }
+  .controls {
+    gap: 10px;
+  }
+}
+
+/* Повідомлення про поворот екрана */
+#rotate-warning {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000c;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Показати повідомлення у горизонтальній орієнтації */
+@media screen and (orientation: landscape) {
+  #rotate-warning {
+    display: flex;
+  }
 }
